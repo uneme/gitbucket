@@ -7,7 +7,6 @@ import gitbucket.core.service.RepositoryService.RepositoryInfo
 import gitbucket.core.util.Notifier
 import gitbucket.core.util.Implicits._
 
-// TODO: Merged with IssuesService?
 trait IssueCreationService {
 
   self: RepositoryService with WebHookIssueCommentService with LabelsService with IssuesService with ActivityService =>

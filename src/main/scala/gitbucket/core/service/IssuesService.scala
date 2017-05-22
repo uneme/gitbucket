@@ -420,6 +420,43 @@ trait IssuesService {
       (if (getAccountByUserName(owner).get.isGroupAccount) getGroupMembers(owner).map(_.userName) else List(owner))).distinct.sorted
   }
 
+  /**
+   * TODO xxx
+   *
+   * @return users notifying this issue
+   */
+  def getNotificationUsers(issue: Issue)(implicit s: Session): List[String] = {
+    val watches = Watches.filter(_.byRepository(issue.userName, issue.repositoryName)).list
+    val notifications = IssueNotifications.filter(_.byIssue(issue.userName, issue.repositoryName, issue.issueId)).list
+    (
+      Seq(
+        // individual repository's owner
+        issue.userName ::
+        // group members of group repository
+        getGroupMembers(issue.userName).map(_.userName) :::
+        // collaborators
+        getCollaboratorUserNames(issue.userName, issue.repositoryName) :::
+        // watching users
+        watches.withFilter(_.notification == "watching").map(_.notificationUserName),
+        // participants
+        issue.openedUserName ::
+        getComments(issue.userName, issue.repositoryName, issue.issueId).map(_.commentedUserName),
+        // subscribers
+        notifications.withFilter(_.subscribed).map(_.notificationUserName)
+      ) zip Seq(
+        // not watching users
+        watches.withFilter(_.notification == "not_watching").map(_.notificationUserName),
+        // ignoring users
+        watches.withFilter(_.notification == "ignoring").map(_.notificationUserName),
+        // unsubscribers
+        notifications.withFilter(!_.subscribed).map(_.notificationUserName)
+      )
+    ).foldLeft[List[String]](Nil){ case (res, (add, remove)) =>
+      (add ++ res) diff remove
+    }.distinct
+  }
+
+
 }
 
 object IssuesService {

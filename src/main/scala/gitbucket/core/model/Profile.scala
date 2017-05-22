@@ -46,11 +46,13 @@ trait CoreProfile extends ProfileProvider with Profile
   with IssueComponent
   with IssueCommentComponent
   with IssueLabelComponent
+  with IssueNotificationComponent
   with LabelComponent
   with MilestoneComponent
   with PullRequestComponent
   with RepositoryComponent
   with SshKeyComponent
+  with WatchComponent
   with WebHookComponent
   with WebHookEventComponent
   with ProtectedBranchComponent

@@ -21,17 +21,18 @@ trait Notifier extends RepositoryService with AccountService with IssuesService 
       (msg: String => String)(implicit context: Context): Unit
 
   protected def recipients(issue: Issue, loginAccount: Account)(notify: String => Unit)(implicit session: Session) =
-    (
-        // individual repository's owner
-        issue.userName ::
-        // group members of group repository
-        getGroupMembers(issue.userName).map(_.userName) :::
-        // collaborators
-        getCollaboratorUserNames(issue.userName, issue.repositoryName) :::
-        // participants
-        issue.openedUserName ::
-        getComments(issue.userName, issue.repositoryName, issue.issueId).map(_.commentedUserName)
-    )
+//    (
+//        // individual repository's owner
+//        issue.userName ::
+//        // group members of group repository
+//        getGroupMembers(issue.userName).map(_.userName) :::
+//        // collaborators
+//        getCollaboratorUserNames(issue.userName, issue.repositoryName) :::
+//        // participants
+//        issue.openedUserName ::
+//        getComments(issue.userName, issue.repositoryName, issue.issueId).map(_.commentedUserName)
+//    )
+    getNotificationUsers(issue)
     .distinct
     .withFilter ( _ != loginAccount.userName )  // the operation in person is excluded
     .foreach (
