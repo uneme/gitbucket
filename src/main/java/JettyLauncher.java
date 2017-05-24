@@ -1,4 +1,10 @@
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.webapp.WebAppContext;
 
 import java.io.File;
@@ -12,9 +18,13 @@ public class JettyLauncher {
 
         String host = null;
         int port = 8080;
+        int sslPort = 8443;
         InetSocketAddress address = null;
         String contextPath = "/";
-        String tmpDirPath="";
+        String tmpDirPath = "";
+        String keystoreFilePath = "";
+        String keystorePassword = "gitbucket";
+        String keyPassword = "gitbucket";
         boolean forceHttps = false;
 
         for(String arg: args) {
@@ -39,6 +49,18 @@ public class JettyLauncher {
                             break;
                         case "--temp_dir":
                             tmpDirPath = dim[1];
+                            break;
+                        case "--keystore_file":
+                            keystoreFilePath = dim[1];
+                            break;
+                        case "--ssl_port":
+                            sslPort = Integer.parseInt(dim[1]);
+                            break;
+                        case "--keystore_password":
+                            keystorePassword = dim[1];
+                            break;
+                        case "--key_password":
+                            keyPassword = dim[1];
                             break;
                     }
                 }
@@ -91,6 +113,39 @@ public class JettyLauncher {
         context.setWar(location.toExternalForm());
         if (forceHttps) {
             context.setInitParameter("org.scalatra.ForceHttps", "true");
+        }
+
+        // SSL
+        if(!keystoreFilePath.isEmpty()) {
+            HttpConfiguration http_config = new HttpConfiguration();
+
+            HttpConfiguration https_config = new HttpConfiguration(http_config);
+            https_config.addCustomizer(new SecureRequestCustomizer());
+
+            SslContextFactory sslContextFactory = new SslContextFactory(keystoreFilePath);
+            sslContextFactory.setKeyStorePassword(keystorePassword);
+            sslContextFactory.setKeyManagerPassword(keyPassword);
+            sslContextFactory.setTrustStorePath(keystoreFilePath);
+            sslContextFactory.setTrustStorePassword(keystorePassword);
+            sslContextFactory.setExcludeCipherSuites(
+                "SSL_RSA_WITH_DES_CBC_SHA",
+                "SSL_DHE_RSA_WITH_DES_CBC_SHA",
+                "SSL_DHE_DSS_WITH_DES_CBC_SHA",
+                "SSL_RSA_EXPORT_WITH_RC4_40_MD5",
+                "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
+                "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
+                "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA"
+            );
+            sslContextFactory.addExcludeProtocols("SSLv3");
+
+            ServerConnector sslConnector = new ServerConnector(
+              server,
+              new SslConnectionFactory(sslContextFactory, "http/1.1"),
+              new HttpConnectionFactory(https_config)
+            );
+            sslConnector.setPort(sslPort);
+            sslConnector.setIdleTimeout(50000);
+            server.addConnector(sslConnector);
         }
 
         server.setHandler(context);

@@ -47,6 +47,28 @@ For more information about installation on Mac or Windows Server (with IIS), or 
 
 To upgrade GitBucket, replace `gitbucket.war` with the new version, after stopping GitBucket. All GitBucket data is stored in `HOME/.gitbucket` by default. So if you want to back up GitBucket's data, copy this directory to the backup location.
 
+Advanced Settings
+--------
+If you want to use HTTPs connection, please change the settings after first launch of the gitbucket.
+
+Steps to change the settings are as follows.
+
+1. Create a JKS formatted keystore file.
+  ```self-signed example
+  keytool -genkeypair -alias selfsigned -keyalg RSA -keysize 2048 -keystore gitbucket.jks -storetype JKS -validity 3650 -keypass gitbucket -storepass gitbucket
+  ```
+2. Change the base_url on gitbucket.conf to **https://[hostname]:8443**.
+3. Launch gitbucket.war with --keystore_file option.
+  ```
+  java -jar gitbucket.war --keystore_file=gitbucket.jks
+  ```
+
+You can specify following options:
+
+- `--ssl_port=[NUMBER]`
+- `--keystore_password=[KEYSTORE PASSWORD]`  * defualt value is `gitbucket`
+- `--key_password=[KEY PASSWORD]`            * default value is `gitbucket`
+
 Plugins
 --------
 GitBucket has a plug-in system that allows extra functionality. Officially the following plug-ins are provided:
