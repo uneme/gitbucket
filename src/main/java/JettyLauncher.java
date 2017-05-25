@@ -115,37 +115,8 @@ public class JettyLauncher {
             context.setInitParameter("org.scalatra.ForceHttps", "true");
         }
 
-        // SSL
         if(!keystoreFilePath.isEmpty()) {
-            HttpConfiguration http_config = new HttpConfiguration();
-
-            HttpConfiguration https_config = new HttpConfiguration(http_config);
-            https_config.addCustomizer(new SecureRequestCustomizer());
-
-            SslContextFactory sslContextFactory = new SslContextFactory(keystoreFilePath);
-            sslContextFactory.setKeyStorePassword(keystorePassword);
-            sslContextFactory.setKeyManagerPassword(keyPassword);
-            sslContextFactory.setTrustStorePath(keystoreFilePath);
-            sslContextFactory.setTrustStorePassword(keystorePassword);
-            sslContextFactory.setExcludeCipherSuites(
-                "SSL_RSA_WITH_DES_CBC_SHA",
-                "SSL_DHE_RSA_WITH_DES_CBC_SHA",
-                "SSL_DHE_DSS_WITH_DES_CBC_SHA",
-                "SSL_RSA_EXPORT_WITH_RC4_40_MD5",
-                "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
-                "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
-                "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA"
-            );
-            sslContextFactory.addExcludeProtocols("SSLv3");
-
-            ServerConnector sslConnector = new ServerConnector(
-              server,
-              new SslConnectionFactory(sslContextFactory, "http/1.1"),
-              new HttpConnectionFactory(https_config)
-            );
-            sslConnector.setPort(sslPort);
-            sslConnector.setIdleTimeout(50000);
-            server.addConnector(sslConnector);
+          enableHttpsConnection(server, keystoreFilePath, keystorePassword, keyPassword, sslPort);
         }
 
         server.setHandler(context);
@@ -153,6 +124,38 @@ public class JettyLauncher {
         server.setStopTimeout(7_000);
         server.start();
         server.join();
+    }
+
+    private static void enableHttpsConnection(Server server, String keystoreFilePath, String keystorePassword, String keyPassword, int sslPort){
+        HttpConfiguration http_config = new HttpConfiguration();
+
+        HttpConfiguration https_config = new HttpConfiguration(http_config);
+        https_config.addCustomizer(new SecureRequestCustomizer());
+
+        SslContextFactory sslContextFactory = new SslContextFactory(keystoreFilePath);
+        sslContextFactory.setKeyStorePassword(keystorePassword);
+        sslContextFactory.setKeyManagerPassword(keyPassword);
+        sslContextFactory.setTrustStorePath(keystoreFilePath);
+        sslContextFactory.setTrustStorePassword(keystorePassword);
+        sslContextFactory.setExcludeCipherSuites(
+            "SSL_RSA_WITH_DES_CBC_SHA",
+            "SSL_DHE_RSA_WITH_DES_CBC_SHA",
+            "SSL_DHE_DSS_WITH_DES_CBC_SHA",
+            "SSL_RSA_EXPORT_WITH_RC4_40_MD5",
+            "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA"
+        );
+        sslContextFactory.addExcludeProtocols("SSLv3");
+
+        ServerConnector sslConnector = new ServerConnector(
+            server,
+            new SslConnectionFactory(sslContextFactory, "http/1.1"),
+            new HttpConnectionFactory(https_config)
+        );
+        sslConnector.setPort(sslPort);
+        sslConnector.setIdleTimeout(5_0000);
+        server.addConnector(sslConnector);
     }
 
     private static File getGitBucketHome(){
